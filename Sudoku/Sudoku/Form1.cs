@@ -190,7 +190,7 @@ namespace Sudoku
             }
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private Sudoku CreateSudokuObjectFromTextGrid()
         {
             int count = 0;
             int[,] values = new int[9, 9];
@@ -201,7 +201,7 @@ namespace Sudoku
                 {
                     if (!string.IsNullOrEmpty(sudokuTextBoxes[rowIndex][colIndex].Text))
                     {
-                    
+
                         values[rowIndex, colIndex] = int.Parse(sudokuTextBoxes[rowIndex][colIndex].Text);
                         count++;
                     }
@@ -211,13 +211,29 @@ namespace Sudoku
             this.message.Text = $"Solving [ filled cells = {count} ]";
 
             var sudoku = new Sudoku(values);
-            sudoku.Solve();
+
+            return sudoku;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            var sudoku = CreateSudokuObjectFromTextGrid();
+            var isSolved = sudoku.Solve();
 
             //MessageBox.Show($"Done ! now Refreshing");
 
             render(sudoku, Color.Blue);
 
-            this.message.Text = $"Solved";
+            if (isSolved)
+            {
+                this.message.Text = $"Solved";
+            }
+            else
+            {
+                this.message.Text = $"Problem Could not be solved.";
+                this.message.ForeColor = Color.Red;
+
+            }
         }
 
         private void button1_Click_1(object sender, EventArgs e)
@@ -251,6 +267,27 @@ namespace Sudoku
         {
             setBlank();
             setHardProblem();
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            var sudoku = CreateSudokuObjectFromTextGrid();
+            var isSolved = sudoku.Solve();
+
+            //MessageBox.Show($"Done ! now Refreshing");
+
+            render(sudoku, Color.Blue);
+
+            if (isSolved)
+            {
+                this.message.Text = $"Solved";
+            }
+            else
+            {
+                this.message.Text = $"Problem Could not be solved.";
+                this.message.ForeColor = Color.Red;
+
+            }
         }
     }
 
