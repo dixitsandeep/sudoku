@@ -1,0 +1,10 @@
+D:\Sandeep Dixit\Git\sudoku\Sudoku\Sudoku\obj\Debug\Sudoku.csprojAssemblyReference.cache
+D:\Sandeep Dixit\Git\sudoku\Sudoku\Sudoku\obj\Debug\Sudoku.Form1.resources
+D:\Sandeep Dixit\Git\sudoku\Sudoku\Sudoku\obj\Debug\Sudoku.Properties.Resources.resources
+D:\Sandeep Dixit\Git\sudoku\Sudoku\Sudoku\obj\Debug\Sudoku.csproj.GenerateResource.cache
+D:\Sandeep Dixit\Git\sudoku\Sudoku\Sudoku\obj\Debug\Sudoku.csproj.CoreCompileInputs.cache
+D:\Sandeep Dixit\Git\sudoku\Sudoku\Sudoku\bin\Debug\Sudoku.exe.config
+D:\Sandeep Dixit\Git\sudoku\Sudoku\Sudoku\bin\Debug\Sudoku.exe
+D:\Sandeep Dixit\Git\sudoku\Sudoku\Sudoku\bin\Debug\Sudoku.pdb
+D:\Sandeep Dixit\Git\sudoku\Sudoku\Sudoku\obj\Debug\Sudoku.exe
+D:\Sandeep Dixit\Git\sudoku\Sudoku\Sudoku\obj\Debug\Sudoku.pdb
