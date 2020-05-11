@@ -3,6 +3,12 @@ using System.Linq;
 using System.Windows.Forms;
 
 
+//Research and Nomenclature material.
+//http://www.sudokudragon.com/sudokustrategy.htm
+//http://www.sudokudragon.com/advancedstrategy.htm
+//http://lipas.uwasa.fi/~timan/sudoku/
+//https://www.researchgate.net/publication/261217550_Difficulty_Rating_of_Sudoku_Puzzles_An_Overview_and_Evaluation
+
 namespace Sudoku
 {
     public class Sudoku
@@ -13,24 +19,7 @@ namespace Sudoku
         private Sudoku9NumberGroup[] sudokuColumns = new Sudoku9NumberGroup[9];
         private Sudoku9NumberGroup[] sudokuBoxes = new Sudoku9NumberGroup[9];
 
-        public Sudoku(int[,] sudokuCellValues)
-        {
-            initializeCells();
-
-            for (int rowIndex = 0; rowIndex <= 8; rowIndex++)
-            {
-
-                for (int colIndex = 0; colIndex <= 8; colIndex++)
-                {
-                    sudokuCells[rowIndex][colIndex].Value = sudokuCellValues[rowIndex, colIndex];
-                }
-
-
-            }
-
-        }
-
-        private void initializeCells()
+        private  Sudoku()
         {
 
             for (int i = 0; i <= 8; i++)
@@ -50,7 +39,7 @@ namespace Sudoku
             {
                 for (int colIndex = 0; colIndex <= 8; colIndex++)
                 {
-                    sudokuCells[rowIndex][colIndex] = new SudokuCell(rowIndex,colIndex);
+                    sudokuCells[rowIndex][colIndex] = new SudokuCell(rowIndex, colIndex);
                     sudokuRows[rowIndex].cells[colIndex] = sudokuCells[rowIndex][colIndex];
                     sudokuColumns[colIndex].cells[rowIndex] = sudokuCells[rowIndex][colIndex];
                 }
@@ -76,9 +65,9 @@ namespace Sudoku
                     //8,8 ==>8,8 
 
                     int firtCellRowIndex = (boxIndex - (boxIndex % 3));
-                    int firtCellColIndex =  (boxIndex % 3)*3;
+                    int firtCellColIndex = (boxIndex % 3) * 3;
 
-                    int rowIndex = firtCellRowIndex + cellIndexInABox/3;
+                    int rowIndex = firtCellRowIndex + cellIndexInABox / 3;
                     int colIndex = firtCellColIndex + cellIndexInABox % 3;
 
                     message += $"[BoxCell({boxIndex}, {cellIndexInABox})={rowIndex},{colIndex}] - ";
@@ -93,8 +82,44 @@ namespace Sudoku
             //MessageBox.Show(message);
 
         }
+        public Sudoku(int[,] sudokuCellValues):this()
+        {
+            
+           
+            for (int rowIndex = 0; rowIndex <= 8; rowIndex++)
+            {
 
-        private bool RemovedRemainingPossibilitiesForUnsetCells(Sudoku9NumberGroup sudokuGroup)
+                for (int colIndex = 0; colIndex <= 8; colIndex++)
+                {
+                    sudokuCells[rowIndex][colIndex].Value = sudokuCellValues[rowIndex, colIndex];
+                }
+
+
+            }
+
+        }
+
+        public Sudoku(string sudokuCellValues) : this()
+        {
+            char[] numbers = sudokuCellValues.ToCharArray();
+
+            int numberIndex;
+
+            for (int rowIndex = 0; rowIndex <= 8; rowIndex++)
+            {
+
+                for (int colIndex = 0; colIndex <= 8; colIndex++)
+                {
+                    sudokuCells[rowIndex][colIndex].Value = int.Parse(""+numbers[rowIndex*9+ colIndex]);
+                }
+
+            }
+
+        }
+
+      
+
+        private bool EliminatePossibilitiesFromUnsetCells(Sudoku9NumberGroup sudokuGroup)
         {
             bool possibilitiesReducedToOne = false;
 
@@ -136,37 +161,36 @@ namespace Sudoku
         }
 
 
-        private void RemovedRemainingPossibilitiesForUnsetCells()
+        private void EliminatePossibilitiesFromUnsetCells()
         {
             
             for (int index = 0; index <= 8; index++)
             {
-                RemovedRemainingPossibilitiesForUnsetCells(sudokuRows[index]);
-                RemovedRemainingPossibilitiesForUnsetCells(sudokuColumns[index]);
-                RemovedRemainingPossibilitiesForUnsetCells(sudokuBoxes[index]);
+                EliminatePossibilitiesFromUnsetCells(sudokuRows[index]);
+                EliminatePossibilitiesFromUnsetCells(sudokuColumns[index]);
+                EliminatePossibilitiesFromUnsetCells(sudokuBoxes[index]);
             }
         }
 
 
-        private bool processPreemptiveSetsInRows(int rowIndexForPreEmptiveSetsSearch)
+
+        private bool EliminatePreemptiveSetsInAGroup(Sudoku9NumberGroup sudokuGroup)
         {
 
             bool possibilitiesReducedToOne = false;
 
-         
-
             int remainingPossibitySizeMax = 0;
 
-            for (int colIndex = 0; colIndex <= 8; colIndex++)
+            for (int cellIndex = 0; cellIndex <= 8; cellIndex++)
             {
 
-                if (sudokuCells[rowIndexForPreEmptiveSetsSearch][colIndex].Value == 0 )
+                if (sudokuGroup.cells[cellIndex].Value == 0)
                 {
                     remainingPossibitySizeMax++;
                 }
             }
 
-           for(int remainingPossibitySize=2;remainingPossibitySize<= remainingPossibitySizeMax; remainingPossibitySize++)
+            for (int remainingPossibitySize = 2; remainingPossibitySize <= remainingPossibitySizeMax; remainingPossibitySize++)
             {
 
 
@@ -176,12 +200,12 @@ namespace Sudoku
                     HashSet<int> remainingPossibilitiesOnUnsetCells = new HashSet<int>();
                     HashSet<int> cellsWithCommonPossilities = new HashSet<int>();
 
-                    for (int colIndex = 0; colIndex <= 8; colIndex++)
+                    for (int cellIndex = 0; cellIndex <= 8; cellIndex++)
                     {
-                        var remainingPossibilitiesSet = sudokuCells[rowIndexForPreEmptiveSetsSearch][colIndex].remainingPossibilities;
+                        var remainingPossibilitiesSet = sudokuGroup.cells[cellIndex].remainingPossibilities;
 
 
-                        if (sudokuCells[rowIndexForPreEmptiveSetsSearch][colIndex].Value == 0 && remainingPossibilitiesSet.Count <= remainingPossibitySize)
+                        if (sudokuGroup.cells[cellIndex].Value == 0 && remainingPossibilitiesSet.Count <= remainingPossibitySize)
                         {
                             var tempSet = new HashSet<int>(remainingPossibilitiesSet);
 
@@ -189,7 +213,7 @@ namespace Sudoku
 
                             if (tempSet.Count <= remainingPossibitySize)
                             {
-                                cellsWithCommonPossilities.Add(colIndex);
+                                cellsWithCommonPossilities.Add(cellIndex);
                                 remainingPossibilitiesOnUnsetCells.UnionWith(remainingPossibilitiesSet);
 
                             }
@@ -202,18 +226,18 @@ namespace Sudoku
                         }
                     }
 
-                    if (cellsWithCommonPossilities.Count == remainingPossibilitiesOnUnsetCells.Count 
-                        && remainingPossibilitiesOnUnsetCells.Count>0)
+                    if (cellsWithCommonPossilities.Count == remainingPossibilitiesOnUnsetCells.Count
+                        && remainingPossibilitiesOnUnsetCells.Count > 0)
                     {
-                        for (int colIndex = 0; colIndex <= 8; colIndex++)
+                        for (int cellIndex = 0; cellIndex <= 8; cellIndex++)
                         {
-                            if (sudokuCells[rowIndexForPreEmptiveSetsSearch][colIndex].Value == 0 && !cellsWithCommonPossilities.Contains(colIndex))
+                            if (sudokuGroup.cells[cellIndex].Value == 0 && !cellsWithCommonPossilities.Contains(cellIndex))
                             {
 
                                 //Reduce the possiblities.
-                                sudokuCells[rowIndexForPreEmptiveSetsSearch][colIndex].remainingPossibilities.ExceptWith(remainingPossibilitiesOnUnsetCells);
+                                sudokuGroup.cells[cellIndex].remainingPossibilities.ExceptWith(remainingPossibilitiesOnUnsetCells);
 
-                                if (sudokuCells[rowIndexForPreEmptiveSetsSearch][colIndex].remainingPossibilities.Count == 0)
+                                if (sudokuGroup.cells[cellIndex].remainingPossibilities.Count == 0)
                                 {
                                     //MessageBox.Show($"Error Condition cell {currentRowIndex}, {colIndex} remainingPossiblities=" + remainingPossiblities[currentRowIndex][colIndex].Count+" ");
                                 }
@@ -221,11 +245,11 @@ namespace Sudoku
                                 //MessageBox.Show($" processPreemptiveSetsInRows {currentRowIndex}, {colIndex} remainingPossiblities=" + remainingPossiblities[currentRowIndex][colIndex].Count + " ");
 
 
-                                if (sudokuCells[rowIndexForPreEmptiveSetsSearch][colIndex].remainingPossibilities.Count == 1)
+                                if (sudokuGroup.cells[cellIndex].remainingPossibilities.Count == 1)
                                 {
                                     possibilitiesReducedToOne = true;
 
-                                   // MessageBox.Show($"processPreemptiveSetsInRows cell {currentRowIndex}, {colIndex} remainingPossiblities=1" );
+                                    // MessageBox.Show($"processPreemptiveSetsInRows cell {currentRowIndex}, {colIndex} remainingPossiblities=1" );
 
 
                                 }
@@ -234,110 +258,7 @@ namespace Sudoku
 
                         }
                     }
-
-
                 }
-
-           
-
-
-
-                remainingPossibitySize++;
-
-            } 
-
-            
-
-
-            return possibilitiesReducedToOne;
-
-        }
-
-
-        private bool processPreemptiveSetsInColumns( int currentColIndex)
-        {
-
-            bool possibilitiesReducedToOne = false;
-
-            bool continueLoop = false;
-
-            int remainingPossibitySizeMax = 0;
-
-            for (int rowIndex = 0; rowIndex <= 8; rowIndex++)
-            {
-
-                if (sudokuCells[rowIndex][currentColIndex].Value == 0)
-                {
-                    remainingPossibitySizeMax++;
-                }
-            }
-
-            for (int remainingPossibitySize = 2; remainingPossibitySize <= remainingPossibitySizeMax; remainingPossibitySize++)
-            {
-
-
-
-                {
-                    //1. Adjust possibilities for a Column
-
-                    HashSet<int> remainingPossibilitiesOnUnsetCells = new HashSet<int>();
-                    HashSet<int> cellsWithCommonPossilities = new HashSet<int>();
-
-                    for (int rowIndex = 0; rowIndex <= 8; rowIndex++)
-                    {
-                        var remainingPossibilitiesSet = sudokuCells[rowIndex][currentColIndex].remainingPossibilities;
-
-
-                        if (sudokuCells[rowIndex][currentColIndex].Value == 0 && remainingPossibilitiesSet.Count <= remainingPossibitySize)
-                        {
-                            var tempSet = new HashSet<int>(remainingPossibilitiesSet);
-
-                            tempSet.UnionWith(remainingPossibilitiesOnUnsetCells);
-
-                            if (tempSet.Count <= remainingPossibitySize)
-                            {
-                                cellsWithCommonPossilities.Add(rowIndex);
-                                remainingPossibilitiesOnUnsetCells.UnionWith(remainingPossibilitiesSet);
-
-                            }
-                                
-
-                            if (cellsWithCommonPossilities.Count == remainingPossibilitiesOnUnsetCells.Count)
-                            {
-                                break;
-                            }
-                        }
-                    }
-
-                    if (cellsWithCommonPossilities.Count == remainingPossibilitiesOnUnsetCells.Count && remainingPossibilitiesOnUnsetCells.Count > 0)
-                    {
-                        for (int rowIndex = 0; rowIndex <= 8; rowIndex++)
-                        {
-                            if (sudokuCells[rowIndex][currentColIndex].Value == 0 && !cellsWithCommonPossilities.Contains(rowIndex))
-                            {
-
-                                //Reduce the possiblities everywhere.
-                                sudokuCells[rowIndex][currentColIndex].remainingPossibilities.ExceptWith(remainingPossibilitiesOnUnsetCells);
-                                //MessageBox.Show("processPreemptiveSetsInColumns");
-
-                                if (sudokuCells[rowIndex][currentColIndex].remainingPossibilities.Count == 1)
-                                {
-                                    possibilitiesReducedToOne = true;
-                                    
-
-                                }
-                            }
-
-
-                        }
-                    }
-
-
-                }
-
-
-
-
 
                 remainingPossibitySize++;
 
@@ -351,112 +272,7 @@ namespace Sudoku
         }
 
 
-        private bool processPreemptiveSetsIn3x3Box(int boxRowStartIndex, int boxColStartIndex)
-        {
 
-            bool possibilitiesReducedToOne = false;
-
-   
-            int remainingPossibitySizeMax = 0;
-
-            int boxRowEndIndex = boxRowStartIndex + 2;
-
-
-            int boxColEndIndex = boxColStartIndex + 2;
-
-            for (int rowIndex = boxRowStartIndex; rowIndex <= boxRowEndIndex; rowIndex++)
-            {
-                for (int colIndex = boxColStartIndex; colIndex <= boxColEndIndex; colIndex++)
-                {
-                    if (sudokuCells[rowIndex][colIndex].Value == 0)
-                    {
-                        remainingPossibitySizeMax++;
-                    }
-                }
-            }
-
-            for (int remainingPossibitySize = 2; remainingPossibitySize <= remainingPossibitySizeMax; remainingPossibitySize++)
-            {
-
-
-                {
-
-
-                    HashSet<int> remainingPossibilitiesOnUnsetCells = new HashSet<int>();
-                    HashSet<int> cellsWithCommonPossilities = new HashSet<int>();
-                    
-
-
-                    for (int rowIndex = boxRowStartIndex; rowIndex <= boxRowEndIndex; rowIndex++)
-                    {
-                        for (int colIndex = boxColStartIndex; colIndex <= boxColEndIndex; colIndex++)
-                        {
-
-                            var remainingPossibilitiesSet = sudokuCells[rowIndex][colIndex].remainingPossibilities;
-
-
-                            if (sudokuCells[rowIndex][colIndex].Value == 0 && remainingPossibilitiesSet.Count <= remainingPossibitySize)
-                            {
-
-                                var tempSet = new HashSet<int>(remainingPossibilitiesSet);
-
-                                tempSet.UnionWith(remainingPossibilitiesOnUnsetCells);
-
-                                if (tempSet.Count <= remainingPossibitySize)
-                                {
-                                    cellsWithCommonPossilities.Add(rowIndex * 10 + colIndex);
-                                    remainingPossibilitiesOnUnsetCells.UnionWith(remainingPossibilitiesSet);
-
-                                }
-
-
-                                if (cellsWithCommonPossilities.Count == remainingPossibilitiesOnUnsetCells.Count)
-                                {
-                                    break;
-                                }
-                            }
-                        }
-
-                    }
-
-                    if (cellsWithCommonPossilities.Count == remainingPossibilitiesOnUnsetCells.Count && remainingPossibilitiesOnUnsetCells.Count > 0)
-                    {
-
-                        for (int rowIndex = boxRowStartIndex; rowIndex <= boxRowEndIndex; rowIndex++)
-                        {
-                            for (int colIndex = boxColStartIndex; colIndex <= boxColEndIndex; colIndex++)
-                            {
-
-                                if (!cellsWithCommonPossilities.Contains(rowIndex * 10 + colIndex))
-                                {
-                                    sudokuCells[rowIndex][colIndex].remainingPossibilities.ExceptWith(remainingPossibilitiesOnUnsetCells);
-
-                                   // MessageBox.Show("Remaining possibities reduced.. in 3x3 square");
-
-
-                                    if (sudokuCells[rowIndex][colIndex].remainingPossibilities.Count == 1)
-                                    {
-                                        possibilitiesReducedToOne = true;
-                                        
-                                    }
-                                }
-                            }
-
-                        }
-
-                    }
-                }
-
-                remainingPossibitySize++;
-
-            } 
-
-
-
-
-            return possibilitiesReducedToOne;
-
-        }
 
         private bool SetCellsWithUniquePossibility()
         {
@@ -477,7 +293,7 @@ namespace Sudoku
                         sudokuCells[rowIndex][colIndex].Value = remainingPossibilitiesSet.First();
                         sudokuCells[rowIndex][colIndex].remainingPossibilities.Clear();
 
-                        RemovedRemainingPossibilitiesForUnsetCells();
+                        EliminatePossibilitiesFromUnsetCells();
 
                         ProcessPreemptiveSets();
 
@@ -503,29 +319,11 @@ namespace Sudoku
 
         private void ProcessPreemptiveSets()
         {
-            for (int rowIndex = 0; rowIndex <= 8; rowIndex++)
+            for (int index = 0; index <= 8; index++)
             {
-
-
-                processPreemptiveSetsInRows(rowIndex);
-
-
-            }
-
-            for (int colIndex = 0; colIndex <= 8; colIndex++)
-            {
-
-                processPreemptiveSetsInColumns(colIndex);
-            }
-
-            for (int rowIndex = 0; rowIndex <= 8; rowIndex += 3)
-            {
-                for (int colIndex = 0; colIndex <= 8; colIndex += 3)
-                {
-                    processPreemptiveSetsIn3x3Box(rowIndex, colIndex);
-                }
-
-
+                EliminatePreemptiveSetsInAGroup(sudokuRows[index]);
+                EliminatePreemptiveSetsInAGroup(sudokuColumns[index]);
+                EliminatePreemptiveSetsInAGroup(sudokuBoxes[index]);
             }
         }
 
@@ -559,7 +357,7 @@ namespace Sudoku
         public bool SolveNextCell()
         {
 
-            RemovedRemainingPossibilitiesForUnsetCells();
+            EliminatePossibilitiesFromUnsetCells();
 
             ProcessPreemptiveSets();
 
@@ -575,7 +373,7 @@ namespace Sudoku
         {
 
 
-            RemovedRemainingPossibilitiesForUnsetCells();
+            EliminatePossibilitiesFromUnsetCells();
 
             ProcessPreemptiveSets();
 
@@ -639,6 +437,30 @@ namespace Sudoku
             return copyOfCells;
 
         }
+
+
+
+        public string Solution()
+        {
+
+            string sudokuSolution = "";
+
+            for (int rowIndex = 0; rowIndex <= 8; rowIndex++)
+            {
+                for (int colIndex = 0; colIndex <= 8; colIndex++)
+                {
+
+                    sudokuSolution += $"{sudokuCells[rowIndex][colIndex].Value}";
+
+                }
+
+            }
+
+            return sudokuSolution;
+
+        }
+
+
     }
 
 

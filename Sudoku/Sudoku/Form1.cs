@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace Sudoku
@@ -76,7 +80,7 @@ namespace Sudoku
 
             var sudoku = new Sudoku(values);
 
-            render(sudoku, Color.Black);
+            RenderNewEntries(sudoku, Color.Black);
 
 
         }
@@ -102,7 +106,7 @@ namespace Sudoku
 
             var sudoku = new Sudoku(values);
 
-            render(sudoku, Color.Black);
+            RenderNewEntries(sudoku, Color.Black);
 
 
         }
@@ -130,12 +134,40 @@ namespace Sudoku
 
             var sudoku = new Sudoku(values);
 
-            render(sudoku, Color.Black);
+            RenderNewEntries(sudoku, Color.Black);
 
 
         }
 
-        private void setBlank()
+        private void setAIEscargotProblem()
+        {
+
+
+            int[,] values =
+                new int[9, 9]
+                {
+                    { 1, 0, 0, 0, 0, 7, 0, 9, 0},
+                    { 0, 3, 0, 0, 2, 0, 0, 0, 8},
+                    { 0, 0, 9, 6, 0, 0, 5, 0, 0},
+
+                    { 0, 0, 5, 3, 0, 0, 9, 0, 0},
+                    { 0, 1, 0, 0, 8, 0, 0, 0, 2},
+                    { 6, 0, 0, 0, 0, 4, 0, 0, 0},
+
+                    { 3, 0, 0, 0, 0, 0, 0, 1, 0},
+                    { 0, 4, 1, 0, 0, 0, 0, 0, 7},
+                    { 0, 0, 7, 0, 0, 0, 3, 0, 0}
+
+                };
+
+            var sudoku = new Sudoku(values);
+
+            RenderNewEntries(sudoku, Color.Black);
+
+
+        }
+
+        private void ClearSudokuGrid()
         {
             //Clear
             int[,] values =
@@ -158,11 +190,11 @@ namespace Sudoku
 
             var sudoku = new Sudoku(values);
 
-            render(sudoku, Color.Blue);
+            RenderNewEntries(sudoku, Color.Blue);
             this.message.Text = $"";
         }
 
-        private void render(Sudoku sudoku, Color color)
+        private void RenderNewEntries(Sudoku sudoku, Color color)
         {
             int[][] cells = sudoku.cells();
 
@@ -222,7 +254,7 @@ namespace Sudoku
 
             //MessageBox.Show($"Done ! now Refreshing");
 
-            render(sudoku, Color.Blue);
+            RenderNewEntries(sudoku, Color.Blue);
 
             if (isSolved)
             {
@@ -238,7 +270,7 @@ namespace Sudoku
 
         private void button1_Click_1(object sender, EventArgs e)
         {
-            setBlank();
+            ClearSudokuGrid();
         }
 
         private void logger_TextChanged(object sender, EventArgs e)
@@ -253,19 +285,19 @@ namespace Sudoku
 
         private void button2_Click(object sender, EventArgs e)
         {
-            setBlank();
+            ClearSudokuGrid();
             setEasyProblem();
         }
 
         private void button4_Click(object sender, EventArgs e)
         {
-            setBlank();
+            ClearSudokuGrid();
             setMediumProblem();
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-            setBlank();
+            ClearSudokuGrid();
             setHardProblem();
         }
 
@@ -276,7 +308,7 @@ namespace Sudoku
 
             //MessageBox.Show($"Done ! now Refreshing");
 
-            render(sudoku, Color.Blue);
+            RenderNewEntries(sudoku, Color.Blue);
 
             if (isSolved)
             {
@@ -288,6 +320,11 @@ namespace Sudoku
                 this.message.ForeColor = Color.Red;
 
             }
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            setAIEscargotProblem();
         }
     }
 
