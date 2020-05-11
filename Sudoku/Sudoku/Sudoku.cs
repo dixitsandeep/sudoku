@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Forms;
 
 
 //Research and Nomenclature material.
+//https://en.wikipedia.org/wiki/Glossary_of_Sudoku
 //http://www.sudokudragon.com/sudokustrategy.htm
 //http://www.sudokudragon.com/advancedstrategy.htm
 //http://lipas.uwasa.fi/~timan/sudoku/
@@ -13,11 +13,15 @@ namespace Sudoku
 {
     public class Sudoku
     {
+       
+
+        //Primary data container
         private SudokuCell[][] sudokuCells = new SudokuCell[9][];
 
-        private Sudoku9NumberGroup[] sudokuRows = new Sudoku9NumberGroup[9];
-        private Sudoku9NumberGroup[] sudokuColumns = new Sudoku9NumberGroup[9];
-        private Sudoku9NumberGroup[] sudokuBoxes = new Sudoku9NumberGroup[9];
+        //Row, column, Box views on above data container.
+        private SudokuGroup[] sudokuRows = new SudokuGroup[9];
+        private SudokuGroup[] sudokuColumns = new SudokuGroup[9];
+        private SudokuGroup[] sudokuBoxes = new SudokuGroup[9];
 
         private  Sudoku()
         {
@@ -25,12 +29,9 @@ namespace Sudoku
             for (int i = 0; i <= 8; i++)
             {
                 sudokuCells[i] = new SudokuCell[9];
-                sudokuRows[i] = new Sudoku9NumberGroup(i);
-                sudokuColumns[i] = new Sudoku9NumberGroup(i);
-                sudokuBoxes[i] = new Sudoku9NumberGroup(i);
-
-
-
+                sudokuRows[i] = new SudokuGroup(i);
+                sudokuColumns[i] = new SudokuGroup(i);
+                sudokuBoxes[i] = new SudokuGroup(i);
             }
 
             //1. Initialize Cells and create row view
@@ -102,14 +103,14 @@ namespace Sudoku
         public Sudoku(string sudokuCellValues) : this()
         {
             char[] numbers = sudokuCellValues.ToCharArray();
-
-            int numberIndex;
+            
 
             for (int rowIndex = 0; rowIndex <= 8; rowIndex++)
             {
 
                 for (int colIndex = 0; colIndex <= 8; colIndex++)
                 {
+    
                     sudokuCells[rowIndex][colIndex].Value = int.Parse(""+numbers[rowIndex*9+ colIndex]);
                 }
 
@@ -119,7 +120,7 @@ namespace Sudoku
 
       
 
-        private bool EliminatePossibilitiesFromUnsetCells(Sudoku9NumberGroup sudokuGroup)
+        private bool EliminatePossibilitiesFromUnsetCells(SudokuGroup sudokuGroup)
         {
             bool possibilitiesReducedToOne = false;
 
@@ -136,8 +137,7 @@ namespace Sudoku
 
             }
 
-            int numberOfUnsetCells = 9 - allNumbersPresentInGroup.Count;
-
+    
 
             for (int cellIndex = 0; cellIndex <= 8; cellIndex++)
             {
@@ -174,7 +174,80 @@ namespace Sudoku
 
 
 
-        private bool EliminatePreemptiveSetsInAGroup(Sudoku9NumberGroup sudokuGroup)
+        private bool SetADigitToOnlyAvailablePlace(SudokuGroup sudokuGroup)
+        {
+            bool aNewCellWasSolved = false;
+
+           
+            var digitsYetToBePlaced = new HashSet<int>(new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 });
+            int[] digitOccurancesMap = new int[10];
+
+            var allUnsetCells = new HashSet<SudokuCell>();
+
+            for (int cellIndex = 0; cellIndex <= 8; cellIndex++)
+            {
+                var cell = sudokuGroup.cells[cellIndex];
+
+                if (cell.Value!= 0)
+                {
+                    digitsYetToBePlaced.Remove(cell.Value);
+                }
+                else
+                {
+                    allUnsetCells.Add(cell);
+                    foreach (var unsetDigit in cell.remainingPossibilities)
+                    {
+                        digitOccurancesMap[unsetDigit]++;
+                    }
+
+                }
+
+            }
+
+            foreach (var digit in digitsYetToBePlaced)
+            {
+                if (digitOccurancesMap[digit] == 1)
+                {
+                    //digit can be set only at this place.
+
+                    aNewCellWasSolved = true;
+
+                    foreach (var unsetCell in allUnsetCells)
+                    {
+                        if (unsetCell.remainingPossibilities.Contains(digit))
+                        {
+                            unsetCell.remainingPossibilities.Clear();
+                            unsetCell.remainingPossibilities.Add(digit);
+
+                            SetCellsWithUniquePossibility();
+                        }
+                        
+                    }
+
+                     
+                }
+            }
+            
+
+
+            return aNewCellWasSolved;
+
+        }
+
+
+        private void SetADigitToOnlyAvailablePlace()
+        {
+
+            for (int index = 0; index <= 8; index++)
+            {
+                SetADigitToOnlyAvailablePlace(sudokuRows[index]);
+                SetADigitToOnlyAvailablePlace(sudokuColumns[index]);
+                SetADigitToOnlyAvailablePlace(sudokuBoxes[index]);
+            }
+        }
+
+
+        private bool EliminatePreemptiveSetsInAGroup(SudokuGroup sudokuGroup)
         {
 
             bool possibilitiesReducedToOne = false;
@@ -294,10 +367,8 @@ namespace Sudoku
                         sudokuCells[rowIndex][colIndex].remainingPossibilities.Clear();
 
                         EliminatePossibilitiesFromUnsetCells();
-
                         ProcessPreemptiveSets();
-
-                       
+                        SetADigitToOnlyAvailablePlace();
 
                         aNewCellHasBeenSet = true;
 
@@ -327,26 +398,33 @@ namespace Sudoku
             }
         }
 
-        private bool IsSolved()
+
+        private int CountUnsolvedCells()
         {
-            bool isSolved = true;
+            int unsolved = 0;
 
             for (int rowIndex = 0; rowIndex <= 8; rowIndex++)
             {
-
-
                 for (int colIndex = 0; colIndex <= 8; colIndex++)
                 {
 
                     if (sudokuCells[rowIndex][colIndex].Value == 0)
                     {
-                        isSolved = false;
+                        unsolved ++;
                     }
 
                 }
-
-
             }
+
+            return unsolved;
+
+        }
+
+        private bool IsSolved()
+        {
+            bool isSolved = CountUnsolvedCells()==0;
+
+          
 
 
 
@@ -357,14 +435,6 @@ namespace Sudoku
         public bool SolveNextCell()
         {
 
-            EliminatePossibilitiesFromUnsetCells();
-
-            ProcessPreemptiveSets();
-
-
-
-            while (SetCellsWithUniquePossibility()) ;
-
             return IsSolved();
 
         }
@@ -372,8 +442,9 @@ namespace Sudoku
         public bool Solve()
         {
 
-
             EliminatePossibilitiesFromUnsetCells();
+
+            while (SetCellsWithUniquePossibility());
 
             ProcessPreemptiveSets();
 
@@ -502,32 +573,26 @@ namespace Sudoku
             this.RowIndex = rowIndex;
             this.ColIndex = colIndex;
             
-            remainingPossibilities = new HashSet<int>();
+            remainingPossibilities = new HashSet<int>(new int[]{1,2,3,4,5,6,7,8,9});
 
-            remainingPossibilities.Add(1);
-            remainingPossibilities.Add(2);
-            remainingPossibilities.Add(3);
 
-            remainingPossibilities.Add(4);
-            remainingPossibilities.Add(5);
-            remainingPossibilities.Add(6);
-
-            remainingPossibilities.Add(7);
-            remainingPossibilities.Add(8);
-            remainingPossibilities.Add(9);
         }
 
        
     }
 
-    public class Sudoku9NumberGroup
+    /**
+     *  A sudoku group is either a Row, a Column, or a Box
+     */
+    public class SudokuGroup
     {
+       
         public int CellIndex { get; private set; }
 
         public  SudokuCell[] cells = new SudokuCell[9];
       
 
-        public Sudoku9NumberGroup(int cellIndex)
+        public SudokuGroup(int cellIndex)
         {
             this.CellIndex = cellIndex;
             
