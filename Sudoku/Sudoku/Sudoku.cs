@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows.Forms.VisualStyles;
 
@@ -24,7 +25,9 @@ namespace Sudoku
         private SudokuGroup[] sudokuRows = new SudokuGroup[9];
         private SudokuGroup[] sudokuColumns = new SudokuGroup[9];
         private SudokuGroup[] sudokuBoxes = new SudokuGroup[9];
-        private bool isRootProblem = true;
+        private int cloningDepth = 0;
+
+        public double DifficultyRating { get; set; }
         private  Sudoku()
         {
 
@@ -95,6 +98,7 @@ namespace Sudoku
                 for (int colIndex = 0; colIndex <= 8; colIndex++)
                 {
                     sudokuCells[rowIndex][colIndex].Value = sudokuCellValues[rowIndex, colIndex];
+                    sudokuCells[rowIndex][colIndex].SolvingDifficulty = SolvingDifficulty.PRESOLVED;
                 }
 
 
@@ -147,10 +151,12 @@ namespace Sudoku
 
                 if (cellValue == 0)
                 {
-                    sudokuGroup.cells[cellIndex].remainingPossibilities.ExceptWith(allNumbersPresentInGroup);
+                    SudokuCell cell = sudokuGroup.cells[cellIndex];
+                    cell.remainingPossibilities.ExceptWith(allNumbersPresentInGroup);
 
-                    if (sudokuGroup.cells[cellIndex].remainingPossibilities.Count == 1)
+                    if (cell.remainingPossibilities.Count == 1)
                     {
+                        cell.SolvingDifficulty = SolvingDifficulty.EASY;
                         SetCellsWithUniquePossibility();
                         possibilitiesReducedToOne = true;
                     }
@@ -221,6 +227,7 @@ namespace Sudoku
                         {
                             unsetCell.remainingPossibilities.Clear();
                             unsetCell.remainingPossibilities.Add(digit);
+                            unsetCell.SolvingDifficulty = SolvingDifficulty.EASY;
 
                             SetCellsWithUniquePossibility();
                         }
@@ -250,10 +257,10 @@ namespace Sudoku
         }
 
 
-        private bool EliminatePreemptiveSetsInAGroup(SudokuGroup sudokuGroup)
+        private void EliminatePreemptiveSetsInAGroup(SudokuGroup sudokuGroup)
         {
 
-            bool possibilitiesReducedToOne = false;
+
 
             int remainingPossibitySizeMax = 0;
 
@@ -273,7 +280,7 @@ namespace Sudoku
                 {
                     //1. Adjust possibilities for a Column
 
-                    HashSet<int> remainingPossibilitiesOnUnsetCells = new HashSet<int>();
+                    HashSet<int> preemptiveSet = new HashSet<int>();
                     HashSet<int> cellsWithCommonPossilities = new HashSet<int>();
 
                     for (int cellIndex = 0; cellIndex <= 8; cellIndex++)
@@ -285,49 +292,40 @@ namespace Sudoku
                         {
                             var tempSet = new HashSet<int>(remainingPossibilitiesSet);
 
-                            tempSet.UnionWith(remainingPossibilitiesOnUnsetCells);
+                            tempSet.UnionWith(preemptiveSet);
 
                             if (tempSet.Count <= remainingPossibitySize)
                             {
                                 cellsWithCommonPossilities.Add(cellIndex);
-                                remainingPossibilitiesOnUnsetCells.UnionWith(remainingPossibilitiesSet);
+                                preemptiveSet.UnionWith(remainingPossibilitiesSet);
 
                             }
 
 
-                            if (cellsWithCommonPossilities.Count == remainingPossibilitiesOnUnsetCells.Count)
+                            if (cellsWithCommonPossilities.Count == preemptiveSet.Count)
                             {
                                 break;
                             }
                         }
                     }
 
-                    if (cellsWithCommonPossilities.Count == remainingPossibilitiesOnUnsetCells.Count
-                        && remainingPossibilitiesOnUnsetCells.Count > 0)
+                    if (cellsWithCommonPossilities.Count == preemptiveSet.Count
+                        && preemptiveSet.Count > 0)
                     {
                         for (int cellIndex = 0; cellIndex <= 8; cellIndex++)
                         {
                             if (sudokuGroup.cells[cellIndex].Value == 0 && !cellsWithCommonPossilities.Contains(cellIndex))
                             {
 
-                                //Reduce the possiblities.
-                                sudokuGroup.cells[cellIndex].remainingPossibilities.ExceptWith(remainingPossibilitiesOnUnsetCells);
-
-                                if (sudokuGroup.cells[cellIndex].remainingPossibilities.Count == 0)
-                                {
-                                    //MessageBox.Show($"Error Condition cell {currentRowIndex}, {colIndex} remainingPossiblities=" + remainingPossiblities[currentRowIndex][colIndex].Count+" ");
-                                }
-
-                                //MessageBox.Show($" processPreemptiveSetsInRows {currentRowIndex}, {colIndex} remainingPossiblities=" + remainingPossiblities[currentRowIndex][colIndex].Count + " ");
+                                //Reduce the possibilities.
+                                sudokuGroup.cells[cellIndex].remainingPossibilities.ExceptWith(preemptiveSet);
 
 
                                 if (sudokuGroup.cells[cellIndex].remainingPossibilities.Count == 1)
                                 {
-                                    possibilitiesReducedToOne = true;
+                                    
 
-                                    // MessageBox.Show($"processPreemptiveSetsInRows cell {currentRowIndex}, {colIndex} remainingPossiblities=1" );
-
-
+                                    sudokuGroup.cells[cellIndex].SolvingDifficulty = SolvingDifficulty.HARD;
                                 }
                             }
 
@@ -343,18 +341,74 @@ namespace Sudoku
 
 
 
-            return possibilitiesReducedToOne;
+
 
         }
 
 
-
-
-        private bool SetCellsWithUniquePossibility()
+        private bool AttemptBackTrackOnFirstBlankCell()
         {
 
-            bool aNewCellHasBeenSet = false;
 
+
+            for (int rowIndex = 0; rowIndex <= 8; rowIndex++)
+            {
+                for (int colIndex = 0; colIndex <= 8; colIndex++)
+                {
+                    SudokuCell cell = sudokuCells[rowIndex][colIndex];
+
+                    if (cell.Value == 0)
+                    {
+                        var remainingDigitsOnThisCell = cell.remainingPossibilities;
+
+                        foreach (var possibility in remainingDigitsOnThisCell)
+                        {
+                            //Set this possibility and try to solve.
+                            Sudoku clone = new Sudoku(this.ToString());
+                            clone.cloningDepth = this.cloningDepth+1;
+                            
+                            clone.sudokuCells[rowIndex][colIndex].Value = possibility;
+
+                            if (clone.Solve())
+                            {
+
+                                cell.SolvingDifficulty = SolvingDifficulty.MAX_DIFFICULTY;
+                                cell.remainingPossibilities.Clear();
+                                cell.Value = possibility;
+
+                                
+                                if (cloningDepth==0)
+                                {
+                                    Console.WriteLine("Used backtracking to set one cell at root");
+                                    
+                                }
+
+                                return this.Solve();
+                            }
+
+                        }
+                    }
+
+                }
+
+            }
+
+            if (cloningDepth == 0)
+            {
+                throw new Exception("No possibility worked. Root problem is not right");
+            }
+
+
+
+            return false;
+        }
+
+
+
+        private void SetCellsWithUniquePossibility()
+        {
+
+           
             for (int rowIndex = 0; rowIndex <= 8; rowIndex++)
               
             {
@@ -369,11 +423,8 @@ namespace Sudoku
                         sudokuCells[rowIndex][colIndex].Value = remainingPossibilitiesSet.First();
                         sudokuCells[rowIndex][colIndex].remainingPossibilities.Clear();
 
-                        EliminatePossibilitiesFromUnsetCells();
-                        ProcessPreemptiveSets();
-                        SetADigitToOnlyAvailablePlace();
-
-                        aNewCellHasBeenSet = true;
+                        this.Solve();
+                        
 
                         //MessageBox.Show($"{rowIndex+1},{colIndex+1} = {sudokuCellsByRowAndColumn[rowIndex][colIndex]}");
 
@@ -386,7 +437,7 @@ namespace Sudoku
 
 
 
-            return aNewCellHasBeenSet;
+           
 
 
         }
@@ -537,12 +588,12 @@ namespace Sudoku
 
         }
 
-       
-
-        private bool AttemptBackTrackOnFirstBlankCell()
+        private double CalculateDifficulty()
         {
 
-           
+            int sudokuDifficulty=0;
+            List<int> topN = new List<int>(10);
+            topN.Add(0);
 
             for (int rowIndex = 0; rowIndex <= 8; rowIndex++)
             {
@@ -550,64 +601,53 @@ namespace Sudoku
                 {
                     SudokuCell cell = sudokuCells[rowIndex][colIndex];
 
-                    if (cell.Value == 0)
+                    int cellDifficulty =  (int) cell.SolvingDifficulty;
+                    sudokuDifficulty += cellDifficulty;
+
+                    if (cellDifficulty > topN.Min())
                     {
-                        var remainingDigitsOnThisCell = cell.remainingPossibilities;
-
-                        foreach (var possibility in remainingDigitsOnThisCell)
+                        if (topN.Count < topN.Capacity)
                         {
-                            //Set this possibility and try to solve.
-                            Sudoku clone = new Sudoku(this.ToString());
-                            clone.isRootProblem = false;
-                            clone.sudokuCells[rowIndex][colIndex].remainingPossibilities.Clear();
-                            clone.sudokuCells[rowIndex][colIndex].Value = possibility;
-
-                            if (clone.Solve())
-                            {
-                                cell.remainingPossibilities.Clear();
-                                cell.Value = possibility;
-
-                                if (isRootProblem)
-                                {
-                                    Console.WriteLine("Used backtracking to set one cell at root");
-                                }
-                                 
-                               return this.Solve();
-                            }
-
+                            topN.Add(cellDifficulty);
+                        }
+                        else
+                        {
+                            topN.Remove(topN.Min());
+                            topN.Add(cellDifficulty);
                         }
                     }
 
+
                 }
-
             }
 
-            if (isRootProblem)
-            {
-                throw  new Exception("No possibility worked. Root problem is not right");
-            }
+            double topNAverage = topN.Average() ;
 
-            
+            double sudokuDifficultyAverage = sudokuDifficulty/81;
+            sudokuDifficultyAverage = (topNAverage + sudokuDifficultyAverage) / 2;
 
-            return false;
+            return topNAverage;
         }
+
+       
 
         public bool Solve()
         {
 
             EliminatePossibilitiesFromUnsetCells();
-
-            while (SetCellsWithUniquePossibility());
+            SetCellsWithUniquePossibility();
 
             ProcessPreemptiveSets();
+            SetCellsWithUniquePossibility();
 
+            SetADigitToOnlyAvailablePlace();
+            SetCellsWithUniquePossibility();
 
-
-            while (SetCellsWithUniquePossibility());
-
-            if(!IsAValidSolution())
+            if (!IsAValidSolution())
 
                     AttemptBackTrackOnFirstBlankCell();
+
+            DifficultyRating = CalculateDifficulty();
 
             return IsAValidSolution();
         }
@@ -694,10 +734,24 @@ namespace Sudoku
     }
 
 
-    public class SudokuCell
+    public enum SolvingDifficulty
     {
+       
+        EASY = 2,
+        MEDIUM = 5,
+        HARD = 8,
+        PRESOLVED = 1,
+        MAX_DIFFICULTY = 10,
+
+    }
+
+public class SudokuCell
+    {
+       
         public int RowIndex { get; private set; }
         public int ColIndex { get; private set; }
+
+        public SolvingDifficulty SolvingDifficulty { get; set; }
 
         private int _value;
 

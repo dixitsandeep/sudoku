@@ -82,7 +82,7 @@ namespace UnitTests
                     {
                         throw new Exception($"Sudoku solution does not match input solution excped: {inputSolution}.\n Actual {solution}");
                     }
-                    Console.WriteLine("Solved a Problem");
+                    Console.WriteLine("Solved a Problem. Rating="+sudoku.DifficultyRating);
                 }
                 else
                 {
