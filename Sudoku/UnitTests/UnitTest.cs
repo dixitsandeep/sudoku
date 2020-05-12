@@ -72,9 +72,12 @@ namespace UnitTests
 
                 //MessageBox.Show($"Problem {counter} loaded from DB. Click to Solve ");
 
-                if (sudoku.Solve())
+                bool isSovled = sudoku.Solve();
+                string solution = sudoku.ToString();
+
+                if (isSovled)
                 {
-                    string solution = sudoku.Solution();
+                   
                     if (!solution.Equals(inputSolution))
                     {
                         throw new Exception($"Sudoku solution does not match input solution excped: {inputSolution}.\n Actual {solution}");
@@ -83,7 +86,7 @@ namespace UnitTests
                 }
                 else
                 {
-                    throw new Exception($"Sudoku could not be solved {line}");
+                    throw new Exception($"Sudoku could not be solved. Incompelete solution is {solution} expected solution was {inputSolution}");
                 }
 
 

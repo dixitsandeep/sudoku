@@ -82,7 +82,7 @@ namespace UnitTests
 
                 sudoku.Solve();
 
-                string solution = sudoku.Solution();
+                string solution = sudoku.ToString();
 
 
 

@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Forms.VisualStyles;
 
 
 //Research and Nomenclature material.
@@ -22,7 +24,7 @@ namespace Sudoku
         private SudokuGroup[] sudokuRows = new SudokuGroup[9];
         private SudokuGroup[] sudokuColumns = new SudokuGroup[9];
         private SudokuGroup[] sudokuBoxes = new SudokuGroup[9];
-
+        private bool isRootProblem = true;
         private  Sudoku()
         {
 
@@ -149,6 +151,7 @@ namespace Sudoku
 
                     if (sudokuGroup.cells[cellIndex].remainingPossibilities.Count == 1)
                     {
+                        SetCellsWithUniquePossibility();
                         possibilitiesReducedToOne = true;
                     }
                 }
@@ -420,23 +423,173 @@ namespace Sudoku
 
         }
 
-        private bool IsSolved()
+        private bool IsSolvable()
         {
-            bool isSolved = CountUnsolvedCells()==0;
 
-          
+            int unsolvedCells = CountUnsolvedCells();
 
+            if (unsolvedCells > 0)
+            {
+                for (int rowIndex = 0; rowIndex <= 8; rowIndex++)
+                {
+                    for (int colIndex = 0; colIndex <= 8; colIndex++)
+                    {
+                        SudokuCell cell = sudokuCells[rowIndex][colIndex];
 
+                        if (cell.Value == 0 && cell.remainingPossibilities.Count == 0)
+                        {
 
-            return isSolved;
+                            return false;
+                        }
+
+                    }
+                }
+
+            }
+            else
+            {
+                return IsAValidSolution();
+            }
+
+       
+
+           
+
+            return true;
 
         }
+
+        private bool IsAValidSolution()
+        {
+            
+
+            int unsolvedCells = CountUnsolvedCells();
+
+
+            if (unsolvedCells != 0)
+            {
+                return false;
+            }
+
+
+            foreach (var sudokuGroup in sudokuRows)
+            {
+                if (!IsAValidGroupSolution(sudokuGroup))
+                {
+                    return false;
+                }
+
+            }
+
+            foreach (var sudokuGroup in sudokuColumns)
+            {
+                if (!IsAValidGroupSolution(sudokuGroup))
+                {
+                    return false;
+                }
+
+            }
+
+            foreach (var sudokuGroup in sudokuBoxes)
+            {
+                if (!IsAValidGroupSolution(sudokuGroup))
+                {
+                    return false;
+                }
+
+            }
+
+            return true;
+        }
+
+
+            
+
+
+            
+
+        
+
+        private bool IsAValidGroupSolution(SudokuGroup sudokuGroup)
+        {
+            HashSet<int> allDigitsInGroup = new HashSet<int>();
+
+            foreach (var sudokuGroupCell in sudokuGroup.cells)
+            {
+
+                allDigitsInGroup.Add(sudokuGroupCell.Value);
+            }
+
+            if (allDigitsInGroup.Count == 9)
+            {
+                return true;
+            }
+
+            return false;
+
+        }
+
 
         public bool SolveNextCell()
         {
 
-            return IsSolved();
+            return IsAValidSolution();
 
+        }
+
+       
+
+        private bool AttemptBackTrackOnFirstBlankCell()
+        {
+
+           
+
+            for (int rowIndex = 0; rowIndex <= 8; rowIndex++)
+            {
+                for (int colIndex = 0; colIndex <= 8; colIndex++)
+                {
+                    SudokuCell cell = sudokuCells[rowIndex][colIndex];
+
+                    if (cell.Value == 0)
+                    {
+                        var remainingDigitsOnThisCell = cell.remainingPossibilities;
+
+                        foreach (var possibility in remainingDigitsOnThisCell)
+                        {
+                            //Set this possibility and try to solve.
+                            Sudoku clone = new Sudoku(this.ToString());
+                            clone.isRootProblem = false;
+                            clone.sudokuCells[rowIndex][colIndex].remainingPossibilities.Clear();
+                            clone.sudokuCells[rowIndex][colIndex].Value = possibility;
+
+                            if (clone.Solve())
+                            {
+                                cell.remainingPossibilities.Clear();
+                                cell.Value = possibility;
+
+                                if (isRootProblem)
+                                {
+                                    Console.WriteLine("Used backtracking to set one cell at root");
+                                }
+                                 
+                               return this.Solve();
+                            }
+
+                        }
+                    }
+
+                }
+
+            }
+
+            if (isRootProblem)
+            {
+                throw  new Exception("No possibility worked. Root problem is not right");
+            }
+
+            
+
+            return false;
         }
 
         public bool Solve()
@@ -452,9 +605,15 @@ namespace Sudoku
 
             while (SetCellsWithUniquePossibility());
 
-            return IsSolved();
+            if(!IsAValidSolution())
 
+                    AttemptBackTrackOnFirstBlankCell();
+
+            return IsAValidSolution();
         }
+
+
+
 
         public int[][] cells()
         {
@@ -511,7 +670,7 @@ namespace Sudoku
 
 
 
-        public string Solution()
+        override public string ToString()
         {
 
             string sudokuSolution = "";
