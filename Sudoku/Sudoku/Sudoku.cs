@@ -156,8 +156,9 @@ namespace Sudoku
 
                     if (cell.remainingPossibilities.Count == 1)
                     {
+                        cell.Value = cell.remainingPossibilities.First();
                         cell.SolvingDifficulty = SolvingDifficulty.EASY;
-                        SetCellsWithUniquePossibility();
+                      
                         possibilitiesReducedToOne = true;
                     }
                 }
@@ -170,16 +171,6 @@ namespace Sudoku
         }
 
 
-        private void EliminatePossibilitiesFromUnsetCells()
-        {
-            
-            for (int index = 0; index <= 8; index++)
-            {
-                EliminatePossibilitiesFromUnsetCells(sudokuRows[index]);
-                EliminatePossibilitiesFromUnsetCells(sudokuColumns[index]);
-                EliminatePossibilitiesFromUnsetCells(sudokuBoxes[index]);
-            }
-        }
 
 
 
@@ -225,11 +216,10 @@ namespace Sudoku
                     {
                         if (unsetCell.remainingPossibilities.Contains(digit))
                         {
-                            unsetCell.remainingPossibilities.Clear();
-                            unsetCell.remainingPossibilities.Add(digit);
+                            unsetCell.Value = digit;
+                            
                             unsetCell.SolvingDifficulty = SolvingDifficulty.EASY;
 
-                            SetCellsWithUniquePossibility();
                         }
                         
                     }
@@ -421,36 +411,15 @@ namespace Sudoku
                     if (remainingPossibilitiesSet.Count == 1 && sudokuCells[rowIndex][colIndex].Value==0)
                     {
                         sudokuCells[rowIndex][colIndex].Value = remainingPossibilitiesSet.First();
-                        sudokuCells[rowIndex][colIndex].remainingPossibilities.Clear();
-
-                        this.Solve();
-                        
-
-                        //MessageBox.Show($"{rowIndex+1},{colIndex+1} = {sudokuCellsByRowAndColumn[rowIndex][colIndex]}");
-
+                       
                     }
 
                 }
 
             }
 
-
-
-
-           
-
-
         }
 
-        private void ProcessPreemptiveSets()
-        {
-            for (int index = 0; index <= 8; index++)
-            {
-                EliminatePreemptiveSetsInAGroup(sudokuRows[index]);
-                EliminatePreemptiveSetsInAGroup(sudokuColumns[index]);
-                EliminatePreemptiveSetsInAGroup(sudokuBoxes[index]);
-            }
-        }
 
 
         private int CountUnsolvedCells()
@@ -629,29 +598,61 @@ namespace Sudoku
             return topNAverage;
         }
 
-       
-
         public bool Solve()
         {
 
+
+
+            int initialUnsolvedCells = CountUnsolvedCells();
+
             EliminatePossibilitiesFromUnsetCells();
-            SetCellsWithUniquePossibility();
-
             ProcessPreemptiveSets();
-            SetCellsWithUniquePossibility();
-
             SetADigitToOnlyAvailablePlace();
-            SetCellsWithUniquePossibility();
 
-            if (!IsAValidSolution())
+            int unsolvedCells = CountUnsolvedCells();
 
-                    AttemptBackTrackOnFirstBlankCell();
+            if (IsAValidSolution())
+            {
+                return true;
+            }
+            else if (unsolvedCells < initialUnsolvedCells)
+            {
+                Solve();
+            }
+            else
+            {
+                AttemptBackTrackOnFirstBlankCell();
+            }
+
 
             DifficultyRating = CalculateDifficulty();
 
             return IsAValidSolution();
         }
 
+
+        private void ProcessPreemptiveSets()
+        {
+            for (int index = 0; index <= 8; index++)
+            {
+                EliminatePreemptiveSetsInAGroup(sudokuRows[index]);
+                EliminatePreemptiveSetsInAGroup(sudokuColumns[index]);
+                EliminatePreemptiveSetsInAGroup(sudokuBoxes[index]);
+            }
+        }
+
+        private void EliminatePossibilitiesFromUnsetCells()
+        {
+
+            for (int index = 0; index <= 8; index++)
+            {
+                EliminatePossibilitiesFromUnsetCells(sudokuRows[index]);
+                EliminatePossibilitiesFromUnsetCells(sudokuColumns[index]);
+                EliminatePossibilitiesFromUnsetCells(sudokuBoxes[index]);
+            }
+        }
+
+     
 
 
 
