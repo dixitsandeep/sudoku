@@ -43,9 +43,6 @@ namespace UnitTests
         public void SolveAFile(string filePath)
         {
 
-
-
-
             string line;
 
             System.IO.StreamReader file =
@@ -61,7 +58,7 @@ namespace UnitTests
                 string[] sudokulineElements = line.Split(',');
 
                 string inputProblem = sudokulineElements[0];
-                string inputSolution = sudokulineElements[1];
+                string expectedSolution = sudokulineElements[1];
 
 
                 Sudoku.Sudoku sudoku = new Sudoku.Sudoku(inputProblem);
@@ -78,15 +75,15 @@ namespace UnitTests
                 if (isSovled)
                 {
                    
-                    if (!solution.Equals(inputSolution))
+                    if (!solution.Equals(expectedSolution))
                     {
-                        throw new Exception($"Sudoku solution does not match input solution excped: {inputSolution}.\n Actual {solution}");
+                        throw new Exception($"Sudoku solution does not match input solution excped: {expectedSolution}.\n Actual {solution}");
                     }
                     Console.WriteLine("Solved a Problem. Rating="+sudoku.DifficultyRating);
                 }
                 else
                 {
-                    throw new Exception($"Sudoku could not be solved. Incompelete solution is {solution} expected solution was {inputSolution}");
+                    throw new Exception($"Sudoku could not be solved. Incompelete solution is {solution} expected solution was {expectedSolution}");
                 }
 
 
