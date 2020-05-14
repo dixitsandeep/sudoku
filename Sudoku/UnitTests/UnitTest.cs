@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Sudoku;
 
 namespace UnitTests
 {
@@ -94,6 +96,50 @@ namespace UnitTests
             }
 
             file.Close();
+        }
+
+        [TestMethod]
+        public void zGeneralTests()
+        {
+
+            var values = @"004300209005009001070060043006002087190007400050083000600000105003508690042910300";
+
+            Regex regularExpression = new Regex("[^0-9]");
+
+
+            string result = regularExpression.Replace(values,"");
+
+            Sudoku.Sudoku cloneWithSortedCells = new Sudoku.Sudoku(result);
+
+            cloneWithSortedCells.EliminatePossibilitiesFromUnsetCells();
+            cloneWithSortedCells.EliminatePossibilitiesFromUnsetCells();
+
+            SudokuCell[][] cells =  cloneWithSortedCells.GetSudokuCellsCopy();
+
+            SudokuCell[] linearArray = new SudokuCell[81];
+
+            for (int rowIndex = 0; rowIndex <= 8; rowIndex++)
+            {
+                for (int colIndex = 0; colIndex <= 8; colIndex++)
+                {
+                   
+                    linearArray[rowIndex * 9 + colIndex] = cells[rowIndex][colIndex];
+                    
+                }
+            }
+
+            Array.Sort(linearArray);
+
+
+            for (int index = 0; index < linearArray.Length; index++)
+            {
+                if(linearArray[index].Value==0)
+                Console.Write($"({linearArray[index].remainingPossibilities.Count}) " );
+            }
+
+
+           
+
         }
 
 

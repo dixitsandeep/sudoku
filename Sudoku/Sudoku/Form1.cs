@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -114,23 +115,21 @@ namespace Sudoku
         private void setAIEscargotProblem()
         {
 
+            var values =  @"100 007 090
+                            030 020 008
+                            009 600 500
 
-            int[,] values =
-                new int[9, 9]
-                {
-                    { 1, 0, 0, 0, 0, 7, 0, 9, 0},
-                    { 0, 3, 0, 0, 2, 0, 0, 0, 8},
-                    { 0, 0, 9, 6, 0, 0, 5, 0, 0},
+                            005 300 900
+                            010 080 002
+                            600 004 000
 
-                    { 0, 0, 5, 3, 0, 0, 9, 0, 0},
-                    { 0, 1, 0, 0, 8, 0, 0, 0, 2},
-                    { 6, 0, 0, 0, 0, 4, 0, 0, 0},
+                            300 000 010
+                            040 000 007
+                            007 000 300";
 
-                    { 3, 0, 0, 0, 0, 0, 0, 1, 0},
-                    { 0, 4, 1, 0, 0, 0, 0, 0, 7},
-                    { 0, 0, 7, 0, 0, 0, 3, 0, 0}
 
-                };
+
+          
 
             var sudoku = new Sudoku(values);
 
@@ -168,7 +167,7 @@ namespace Sudoku
 
         private void RenderNewEntries(Sudoku sudoku, Color color)
         {
-            int[][] cells = sudoku.cells();
+            SudokuCell[][] cells = sudoku.GetSudokuCellsCopy();
 
             for (int rowIndex = 0; rowIndex <= 8; rowIndex++)
             {
@@ -176,7 +175,7 @@ namespace Sudoku
                 for (int colIndex = 0; colIndex <= 8; colIndex++)
                 {
 
-                    if (cells[rowIndex][colIndex] != 0)
+                    if (cells[rowIndex][colIndex].Value != 0)
                     {
                         if (string.IsNullOrEmpty(sudokuTextBoxes[rowIndex][colIndex].Text))
                         {
@@ -184,7 +183,7 @@ namespace Sudoku
 
                         }
 
-                        sudokuTextBoxes[rowIndex][colIndex].Text = cells[rowIndex][colIndex].ToString();
+                        sudokuTextBoxes[rowIndex][colIndex].Text = cells[rowIndex][colIndex].Value.ToString();
                     }
                     else
                     {
@@ -275,8 +274,10 @@ namespace Sudoku
 
         private void button5_Click(object sender, EventArgs e)
         {
+
+            this.message.Text = $"running..";
             var sudoku = CreateSudokuObjectFromTextGrid();
-            var isSolved = sudoku.Solve();
+            var isSolved = sudoku.SolveOneIterationOnly();
 
             //MessageBox.Show($"Done ! now Refreshing");
 
@@ -284,11 +285,11 @@ namespace Sudoku
 
             if (isSolved)
             {
-                this.message.Text = $"Solved";
+                this.message.Text = $"Complete";
             }
             else
             {
-                this.message.Text = $"Problem Could not be solved.";
+                this.message.Text = $"Try more steps..";
                 this.message.ForeColor = Color.Red;
 
             }
