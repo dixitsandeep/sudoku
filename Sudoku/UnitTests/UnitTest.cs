@@ -134,7 +134,7 @@ namespace UnitTests
             for (int index = 0; index < linearArray.Length; index++)
             {
                 if(linearArray[index].Value==0)
-                Console.Write($"({linearArray[index].remainingPossibilities.Count}) " );
+                Console.Write($"({linearArray[index].RemainingPossibilities.Count}) " );
             }
 
 
